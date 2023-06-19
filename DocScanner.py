@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
+import pytesseract
 
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 #######################################
 imgWidth = 540
 imgHeight = 640
@@ -14,11 +16,11 @@ cap.set(10,150)
 def preProcessing(img):
     imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     imgBlur = cv2.GaussianBlur(imgGray, (5, 5), 1)
-    imgCanny = cv2.Canny(imgBlur, 200, 200)
-    kernel = np.ones((5,5))
-    imgDial = cv2.dilate(imgCanny, kernel, iterations=2)
-    imgThres = cv2.erode(imgDial, kernel, iterations=1)
-
+    # imgCanny = cv2.Canny(imgBlur, 200, 200)
+    # kernel = np.ones((5,5))
+    # imgDial = cv2.dilate(imgCanny, kernel, iterations=2)
+    # imgThres = cv2.erode(imgDial, kernel, iterations=1)
+    imgThres = cv2.adaptiveThreshold(imgBlur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
     return imgThres
 
 def getContours(img):
@@ -62,6 +64,7 @@ def getWarp(img,biggest):
 
     return imgCropped
 
+
 while True:
     success, img = cap.read()
     img = cv2.resize(img,(imgWidth,imgHeight))
@@ -69,12 +72,14 @@ while True:
 
     imgThres = preProcessing(img)
     biggest = getContours(imgThres)
+
     imgWarped = None
     if biggest.size != 0:
         imgWarped = getWarp(img, biggest)
+        text = pytesseract.image_to_string(imgWarped)
         # imageArray = ([img,imgThres],
         #           [imgContour,imgWarped])
-        imageArray = ([imgContour, imgWarped])
+        # imageArray = ([imgContour, imgWarped])
         cv2.imshow("ImageWarped", imgWarped)
     else:
         # imageArray = ([img, imgThres],
